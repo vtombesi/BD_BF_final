@@ -123,12 +123,12 @@ class Blockchain {
             }
             let verified = bitcoinMessage.verify(message, address, signature);
             if (!verified) {
-                reject('Signature is invalid');
+                reject(new Error('Signature is invalid'));
             }
             let block = new BlockClass.Block({owner: address, star: star});
             return this._addBlock(block)
-                .then(i => resolve(block))
-                .catch(e => reject(e));
+                .then(_ => resolve(block))
+                .catch(err => reject(new Error(err)));
         });
     }
 
@@ -179,9 +179,9 @@ class Blockchain {
             try {
                 self.chain.forEach(block => {
                     const body = block.getBData();
-                    console.log(body);
                     if (body.owner === address) {
-                        stars.push({star: body.star, owner: body.owner});
+                        const {star, owner} = body;
+                        stars.push({star, owner});
                     }
                 });
                 resolve(stars);
@@ -202,19 +202,24 @@ class Blockchain {
         let self = this;
         let errorLog = [];
         return new Promise(async (resolve, reject) => {
-            self.chain.forEach((block, index) => {
-                let isBlockValid = block.validate();
-                if (isBlockValid === false) {
-                    errorLog.push(`${JSON.stringify(block)} is tampered.`)
-                }
-                if (index > 0) {
-                    let previousBlock = self.chain[index - 1];
-                    if (block.previousBlockHash !== previousBlock.hash) {
-                        errorLog.push(`${JSON.stringify(block)}'s previousBlockHash doesn't match ${previousBlock.hash}`);
+            try {
+                self.chain.forEach((block, index) => {
+                    let isBlockValid = block.validate();
+                    if (isBlockValid === false) {
+                        errorLog.push(`${JSON.stringify(block)} has been tampered with.`)
                     }
-                }
-            });
-            resolve(errorLog);
+                    if (index > 0) {
+                        let previousBlock = self.chain[index - 1];
+                        if (block.previousBlockHash !== previousBlock.hash) {
+                            errorLog.push(`${JSON.stringify(block)} previousBlockHash is not the same as ${previousBlock.hash}`);
+                        }
+                    }
+                });
+                resolve(errorLog);
+            }
+            catch (err) {
+                reject(new Error(err));
+            }
         });
     }
 
