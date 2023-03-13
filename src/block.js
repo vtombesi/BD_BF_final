@@ -42,8 +42,10 @@ class Block {
                 // Save in auxiliary variable the current block hash
                 let currentHash = self.hash;
                 // Recalculate the hash of the Block
+                self.hash = null;
                 let newHash = SHA256(JSON.stringify(self)).toString();
                 // Comparing if the hashes changed
+                self.hash = currentHash;
                 // Returning the Block is not valid
                 // Returning the Block is valid
                 resolve(currentHash === newHash);
@@ -65,7 +67,7 @@ class Block {
      *     or Reject with an error.
      */
     getBData() {
-        return JSON.parse(hex2ascii(this.body));
+        return this.height ? JSON.parse(hex2ascii(this.body)) : null;
     }
 }
 

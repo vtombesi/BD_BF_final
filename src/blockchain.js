@@ -72,7 +72,7 @@ class Blockchain {
                 }
                 block.hash = SHA256(JSON.stringify(block)).toString();
                 self.chain.push(block);
-                let errorLogs = self.validateChain();
+                let errorLogs = await self.validateChain();
                 console.log('errors: ', errorLogs);
             }
             catch (err) {
@@ -193,6 +193,15 @@ class Blockchain {
     }
 
     /**
+     * Utility to use a forEach asynchronously
+     */
+    async asyncForEach(array, callback) {
+        for (let index = 0; index < array.length; index++) {
+            await callback(array[index], index, array);
+        }
+    }
+
+    /**
      * This method will return a Promise that will resolve with the list of errors when validating the chain.
      * Steps to validate:
      * 1. You should validate each block using `validateBlock`
@@ -203,8 +212,8 @@ class Blockchain {
         let errorLog = [];
         return new Promise(async (resolve, reject) => {
             try {
-                self.chain.forEach((block, index) => {
-                    let isBlockValid = block.validate();
+                await this.asyncForEach(self.chain, async (block, index) => {
+                    let isBlockValid = await block.validate();
                     if (isBlockValid === false) {
                         errorLog.push(`${JSON.stringify(block)} has been tampered with.`)
                     }
